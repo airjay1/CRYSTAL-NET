@@ -1,0 +1,24 @@
+from fastapi import FastAPI, Query
+import os, requests
+from dotenv import load_dotenv
+
+load_dotenv()
+BING_KEY = os.getenv("BING_KEY")
+
+app = FastAPI()
+
+@app.get("/search")
+def search(q: str = Query(..., min_length=1)):
+    url = "https://api.bing.microsoft.com/v7.0/search"
+    headers = {"Ocp-Apim-Subscription-Key": BING_KEY}
+    params = {"q": q, "count": 5}  # top 5 results
+    r = requests.get(url, headers=headers, params=params)
+    data = r.json()
+    results = []
+    for item in data.get("webPages", {}).get("value", []):
+        results.append({
+            "name": item.get("name"),
+            "url": item.get("url"),
+            "snippet": item.get("snippet")
+        })
+    return {"query": q, "results": results}
